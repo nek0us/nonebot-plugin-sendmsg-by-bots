@@ -59,4 +59,6 @@ await tools.send_private_forward_msg_by_bots(user_id: int,msg: list)
 # node_msg : 合并转发消息列表
 # msg : 消息
 
+# 发送成功会返回True，否则会返回False
+
 ```

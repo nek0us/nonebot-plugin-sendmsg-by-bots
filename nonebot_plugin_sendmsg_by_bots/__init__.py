@@ -19,6 +19,8 @@ await tools.send_private_forward_msg_by_bots(user_id: int,msg: list)
 # user_id : 好友qq号
 # node_msg : 合并转发消息列表
 # msg : 消息
+
+# 发送成功会返回True，否则会返回False
     """,
     type="library",
     config=Config,
