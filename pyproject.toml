@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-sendmsg-by-bots"
-version = "0.0.2"
+version = "0.0.3"
 description = "a send msg tools"
 authors = [
     {name = "nek0us", email = "nekouss@gmail.com"},
