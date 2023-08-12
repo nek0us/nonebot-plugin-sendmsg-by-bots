@@ -39,7 +39,7 @@ async def send_private_forward_msg_by_bots(user_id:int,node_msg:list) -> bool:
             status = True
     return status
             
-async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) -> bool:
+async def send_group_msg_by_bots(group_id:int,msg) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
     不在bot群列表的群不会尝试发送'''
@@ -51,7 +51,7 @@ async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) ->
             status = True
     return status
 
-async def send_private_msg_by_bots(user_id:int,msg:Message|MessageSegment|str) -> bool:
+async def send_private_msg_by_bots(user_id:int,msg) -> bool:
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的消息\n
     不在bot好友列表的qq不会尝试发送'''
