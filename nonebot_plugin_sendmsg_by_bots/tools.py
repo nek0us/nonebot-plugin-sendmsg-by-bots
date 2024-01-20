@@ -2,7 +2,22 @@ import nonebot
 from nonebot.adapters.onebot.v11.adapter import Adapter
 from nonebot.adapters.onebot.v11 import Message,MessageSegment
 from nonebot.adapters.onebot.v11.bot import Bot
+from nonebot.adapters.onebot.v11 import ActionFailed
+from nonebot import logger
 
+async def get_all_group_info(group_id:int):
+    bots = nonebot.get_adapter(Adapter).bots
+    for bot in bots:
+        try:
+            group_info = await bots[bot].get_group_info(group_id=group_id)
+            return group_info
+        except ActionFailed:
+            pass
+        except Exception as e:
+            pass
+    logger.debug(f"没有检测到有关群{group_id}的信息，也许所有bot均已退群。")
+    return {"group_name":"未获取到群名","group_id":group_id}
+        
 async def is_in_group(bot:Bot,group_id:int) -> bool:
     group_list = await bot.get_group_list()
     if group_id not in [group_num["group_id"] for group_num in group_list]:
@@ -39,7 +54,7 @@ async def send_private_forward_msg_by_bots(user_id:int,node_msg:list) -> bool:
             status = True
     return status
             
-async def send_group_msg_by_bots(group_id:int,msg) -> bool:
+async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
     不在bot群列表的群不会尝试发送'''
@@ -51,7 +66,7 @@ async def send_group_msg_by_bots(group_id:int,msg) -> bool:
             status = True
     return status
 
-async def send_private_msg_by_bots(user_id:int,msg) -> bool:
+async def send_private_msg_by_bots(user_id:int,msg:Message|MessageSegment|str) -> bool:
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的消息\n
     不在bot好友列表的qq不会尝试发送'''

@@ -61,4 +61,8 @@ await tools.send_private_forward_msg_by_bots(user_id: int,msg: list)
 
 # 发送成功会返回True，否则会返回False
 
+# 从所有bot的群列表检索群信息
+# 未检索到会返回 {"group_name":"未获取到群名","group_id":group_id}
+group_info = await tools.get_all_group_info(group_id:int)
+
 ```
