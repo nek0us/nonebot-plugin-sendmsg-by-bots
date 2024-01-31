@@ -6,6 +6,7 @@ from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot import logger
 
 async def get_all_group_info(group_id:int):
+    '''从所有bot账号中检索群信息 return {"group_name":"未获取到群名","group_id":group_id}'''
     bots = nonebot.get_adapter(Adapter).bots
     for bot in bots:
         try:
@@ -53,7 +54,32 @@ async def send_private_forward_msg_by_bots(user_id:int,node_msg:list) -> bool:
             await bots[bot].send_private_forward_msg(user_id=int(user_id), messages=node_msg)
             status = True
     return status
-            
+
+async def send_group_forward_msg_by_bots_once(group_id:int,node_msg:list) -> bool:
+    '''group_id：尝试发送到的群号\n
+    msg：尝试发送的node列表\n
+    不在bot群列表的群不会尝试发送'''
+    bots = nonebot.get_adapter(Adapter).bots
+    status = False
+    for bot in bots:
+        if await is_in_group(bots[bot],int(group_id)):
+            await bots[bot].send_group_forward_msg(group_id=int(group_id), messages=node_msg)
+            status = True
+            return status
+    return status
+        
+async def send_private_forward_msg_by_bots_once(user_id:int,node_msg:list) -> bool:
+    '''user_id：尝试发送到的好友qq号\n
+    msg：尝试发送的node列表\n
+    不在bot好友列表的qq不会尝试发送'''
+    bots = nonebot.get_adapter(Adapter).bots
+    status = False
+    for bot in bots:
+        if await is_in_friend(bots[bot],int(user_id)):
+            await bots[bot].send_private_forward_msg(user_id=int(user_id), messages=node_msg)
+            status = True
+            return status
+    return status            
 async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
@@ -80,3 +106,11 @@ async def send_private_msg_by_bots(user_id:int,msg:Message|MessageSegment|str) -
                
         
         
+async def get_group_member_list(group_id: int) -> list:
+    '''根据群号检索群成员列表'''
+    bots = nonebot.get_adapter(Adapter).bots
+    group_member = []
+    for bot in bots:
+        if await is_in_group(bots[bot],int(group_id)):
+            group_member = await bot.call_api('get_group_member_list',**{"group_id":group_id})
+    return group_member
