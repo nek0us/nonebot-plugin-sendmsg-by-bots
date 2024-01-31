@@ -112,5 +112,5 @@ async def get_group_member_list(group_id: int) -> list:
     group_member = []
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
-            group_member = await bot.call_api('get_group_member_list',**{"group_id":group_id})
+            group_member = await bots[bot].call_api('get_group_member_list',**{"group_id":group_id})
     return group_member
