@@ -47,12 +47,16 @@ _✨ NoneBot 多bot发送消息 ✨_
 from nonebot_plugin_sendmsg_by_bots import tools
 # 发送群消息（能发都发）：
 await tools.send_group_msg_by_bots(group_id: int,node_msg: Message|MessageSegment|str)
+# 发送群消息（只发成功一次）：
+await tools.send_group_msg_by_bots_once(group_id: int,node_msg: Message|MessageSegment|str)
 # 发送群合并消息（能发都发）：
 await tools.send_group_forward_msg_by_bots(group_id: int,node_msg: list)
 # 发送群合并消息（一次收手）：
 await tools.send_group_forward_msg_by_bots_once(group_id: int,node_msg: list)
 # 发送私聊消息（能发都发）：
 await tools.send_private_msg_by_bots(user_id: int,msg: Message|MessageSegment|str)
+# 发送私聊消息（只发成功一次收手）：
+await tools.send_private_msg_by_bots_once(user_id: int,msg: Message|MessageSegment|str)
 # 发送私聊合并消息（能发都发）：
 await tools.send_private_forward_msg_by_bots(user_id: int,msg: list)
 # 发送私聊合并消息（一次收手）：
