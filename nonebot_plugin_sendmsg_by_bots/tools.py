@@ -3,7 +3,44 @@ from nonebot.adapters.onebot.v11.adapter import Adapter
 from nonebot.adapters.onebot.v11 import Message,MessageSegment
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11 import ActionFailed
+from nonebot.exception import FinishedException,ActionFailed
 from nonebot import logger
+from typing import Union
+
+class MessageSegment(MessageSegment):
+    """重构消息段，使其支持拉格兰"""
+    @classmethod
+    def node_custom_lgr(
+        cls, node: Union[list[MessageSegment],Message,MessageSegment]
+        ) -> Message:
+        if isinstance(node,list):
+            return Message( cls(
+            "node", {"uin": str(msg.data["user_id"]), "name": msg.data["nickname"], "content": msg.data["content"]}
+        ) for msg in node)
+        else:
+            return Message(cls(
+                "node", {"uin": str(node.data["user_id"]), "name": node.data["nickname"], "content": node.data["content"]}
+            ))
+
+async def send_forward_msg(bot: Bot,id: int,msg: list,msg_type: str = "group"):
+    try:
+        if msg_type == "group":
+            await bot.send_group_forward_msg(group_id=int(id), messages=msg)
+        else:
+            await bot.send_private_forward_msg(user_id=int(id), messages=msg)
+    except FinishedException:
+        pass
+    except ActionFailed as e:
+        # 拉格兰兼容
+        if e.info["status"] == "failed" and e.info["retcode"] == 200 and e.info["data"] == None: # type: ignore
+            msg = MessageSegment.node_custom_lgr(msg)
+            if msg_type == "group":
+                await bot.send_group_forward_msg(group_id=int(id), messages=msg)
+            else:
+                await bot.send_private_forward_msg(user_id=int(id), messages=msg)
+    except Exception as e:
+        logger.warning(f"发送合并消息失败：{e}")
+
 
 async def get_all_group_info(group_id:int):
     '''从所有bot账号中检索群信息 return {"group_name":"未获取到群名","group_id":group_id}'''
@@ -39,7 +76,7 @@ async def send_group_forward_msg_by_bots(group_id:int,node_msg:list) -> bool:
     status = False
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
-            await bots[bot].send_group_forward_msg(group_id=int(group_id), messages=node_msg)
+            await send_forward_msg(bots[bot],int(group_id),node_msg)
             status = True
     return status
         
@@ -51,7 +88,7 @@ async def send_private_forward_msg_by_bots(user_id:int,node_msg:list) -> bool:
     status = False
     for bot in bots:
         if await is_in_friend(bots[bot],int(user_id)):
-            await bots[bot].send_private_forward_msg(user_id=int(user_id), messages=node_msg)
+            await send_forward_msg(bots[bot],int(user_id),node_msg,msg_type="private")
             status = True
     return status
 
@@ -63,7 +100,7 @@ async def send_group_forward_msg_by_bots_once(group_id:int,node_msg:list) -> boo
     status = False
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
-            await bots[bot].send_group_forward_msg(group_id=int(group_id), messages=node_msg)
+            await send_forward_msg(bots[bot],int(group_id),node_msg)
             status = True
             return status
     return status
@@ -76,7 +113,7 @@ async def send_private_forward_msg_by_bots_once(user_id:int,node_msg:list) -> bo
     status = False
     for bot in bots:
         if await is_in_friend(bots[bot],int(user_id)):
-            await bots[bot].send_private_forward_msg(user_id=int(user_id), messages=node_msg)
+            await send_forward_msg(bots[bot],int(user_id),node_msg,msg_type="private")
             status = True
             return status
     return status            
