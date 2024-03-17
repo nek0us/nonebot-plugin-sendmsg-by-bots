@@ -61,6 +61,8 @@ await tools.send_private_msg_by_bots_once(user_id: int,msg: Message|MessageSegme
 await tools.send_private_forward_msg_by_bots(user_id: int,msg: list)
 # 发送私聊合并消息（一次收手）：
 await tools.send_private_forward_msg_by_bots_once(user_id: int,msg: list)
+# 被动回复消息，以拉格兰md形式发送
+await tools.send_text2md(text: str):
 
 # group_id : 群号
 # user_id : 好友qq号

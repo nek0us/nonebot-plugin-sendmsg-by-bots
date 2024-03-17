@@ -1,9 +1,10 @@
 import nonebot
 from nonebot.adapters.onebot.v11.adapter import Adapter
-from nonebot.adapters.onebot.v11 import Message,MessageSegment
+from nonebot.adapters.onebot.v11 import Message,MessageSegment,GroupMessageEvent
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot.exception import FinishedException,ActionFailed
+from nonebot.matcher import current_bot,current_event
 from nonebot import logger
 from typing import Union
 
@@ -176,3 +177,31 @@ async def get_group_member_list(group_id: int) -> list:
         if await is_in_group(bots[bot],int(group_id)):
             group_member = await bots[bot].call_api('get_group_member_list',**{"group_id":group_id})
     return group_member
+
+
+async def send_text2md(text: str):
+    '''转为拉格兰markdown消息发生'''
+    md_text = {
+             "type": "markdown",
+             "data": {
+               "content": '{"content":"' + repr(text)[1:-1].replace('\"','\\"').replace("\'","\\'") + '"}'
+             }
+           }
+    md_node = MessageSegment.node_custom(user_id=10000,nickname="测试",content=[md_text])
+    md = MessageSegment.node_custom_lgr(md_node)
+    bot = current_bot.get()
+    res_id = await bot.call_api("send_forward_msg", messages=md)
+    lmsg = {
+            "type": "longmsg",
+            "data": {
+                "id": res_id
+            }
+        }
+   #  return lmsg
+    event = current_event.get()
+    if isinstance(event,GroupMessageEvent):
+        await send_group_msg_by_bots_once(group_id=event.group_id,msg=[lmsg])
+        # await bot.call_api("send_group_msg",group_id=event.group_id,message=[lmsg])
+    else:
+        await send_private_msg_by_bots_once(user_id=event.user_id,msg=[lmsg])
+        # await bot.call_api("send_private_msg",user_id=event.user_id,message=[lmsg])
