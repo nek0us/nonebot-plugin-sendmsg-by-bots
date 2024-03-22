@@ -6,7 +6,7 @@ from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot.exception import FinishedException,ActionFailed
 from nonebot.matcher import current_bot,current_event
 from nonebot import logger
-from typing import Union
+from typing import Union,Optional
 
 class MessageSegment(MessageSegment):
     """重构消息段，使其支持拉格兰"""
@@ -130,12 +130,18 @@ async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) ->
             status = True
     return status
 
-async def send_group_msg_by_bots_once(group_id:int,msg:Message|MessageSegment|str) -> bool:
+async def send_group_msg_by_bots_once(group_id:int,msg:Message|MessageSegment|str,self_id: Optional[str] = None) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
     不在bot群列表的群不会尝试发送'''
     bots = nonebot.get_adapter(Adapter).bots
     status = False
+    if self_id:
+        try:
+            await bots[self_id].send_group_msg(group_id=int(group_id),message=msg)
+            return True
+        except Exception as e:
+            logger.warning(f"传入的bot id似乎不正确{self_id}")
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
             await bots[bot].send_group_msg(group_id=int(group_id),message=msg)
@@ -155,12 +161,18 @@ async def send_private_msg_by_bots(user_id:int,msg:Message|MessageSegment|str) -
             status = True
     return status
 
-async def send_private_msg_by_bots_once(user_id:int,msg:Message|MessageSegment|str) -> bool:
+async def send_private_msg_by_bots_once(user_id:int,msg:Message|MessageSegment|str,self_id: Optional[str] = None) -> bool:
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的消息\n
     不在bot好友列表的qq不会尝试发送'''
     bots = nonebot.get_adapter(Adapter).bots
     status = False
+    if self_id:
+        try:
+            await bots[self_id].send_private_msg(user_id=int(user_id),message=msg)
+            return True
+        except Exception as e:
+            logger.warning(f"传入的bot id似乎不正确{self_id}")
     for bot in bots:
         if await is_in_friend(bots[bot],int(user_id)):
             await bots[bot].send_private_msg(user_id=int(user_id),message=msg)
@@ -179,7 +191,7 @@ async def get_group_member_list(group_id: int) -> list:
     return group_member
 
 
-async def send_text2md(text: str):
+async def send_text2md(text: str,bot_id: Optional[str] = None):
     '''转为拉格兰markdown消息发生'''
     md_text = {
              "type": "markdown",
@@ -200,8 +212,8 @@ async def send_text2md(text: str):
    #  return lmsg
     event = current_event.get()
     if isinstance(event,GroupMessageEvent):
-        await send_group_msg_by_bots_once(group_id=event.group_id,msg=[lmsg])
+        await send_group_msg_by_bots_once(group_id=event.group_id,msg=[lmsg],self_id=bot_id)
         # await bot.call_api("send_group_msg",group_id=event.group_id,message=[lmsg])
     else:
-        await send_private_msg_by_bots_once(user_id=event.user_id,msg=[lmsg])
+        await send_private_msg_by_bots_once(user_id=event.user_id,msg=[lmsg],self_id=bot_id)
         # await bot.call_api("send_private_msg",user_id=event.user_id,message=[lmsg])
