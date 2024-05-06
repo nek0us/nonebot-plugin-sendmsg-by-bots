@@ -93,12 +93,21 @@ async def send_private_forward_msg_by_bots(user_id:int,node_msg:list) -> bool:
             status = True
     return status
 
-async def send_group_forward_msg_by_bots_once(group_id:int,node_msg:list) -> bool:
+async def send_group_forward_msg_by_bots_once(group_id:int,node_msg:list,bot_id: Optional[str] = None) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的node列表\n
     不在bot群列表的群不会尝试发送'''
     bots = nonebot.get_adapter(Adapter).bots
     status = False
+    
+    if bot_id:
+        try:
+            await send_forward_msg(bots[bot_id],int(group_id),node_msg)
+            status = True
+            return status
+        except Exception as e:
+            pass
+        
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
             await send_forward_msg(bots[bot],int(group_id),node_msg)
@@ -106,18 +115,28 @@ async def send_group_forward_msg_by_bots_once(group_id:int,node_msg:list) -> boo
             return status
     return status
         
-async def send_private_forward_msg_by_bots_once(user_id:int,node_msg:list) -> bool:
+async def send_private_forward_msg_by_bots_once(user_id:int,node_msg:list,bot_id: Optional[str] = None) -> bool:
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的node列表\n
     不在bot好友列表的qq不会尝试发送'''
     bots = nonebot.get_adapter(Adapter).bots
     status = False
+    
+    if bot_id:
+        try:
+            await send_forward_msg(bots[bot_id],int(user_id),node_msg,msg_type="private")
+            status = True
+            return status
+        except Exception as e:
+            pass
+    
     for bot in bots:
         if await is_in_friend(bots[bot],int(user_id)):
             await send_forward_msg(bots[bot],int(user_id),node_msg,msg_type="private")
             status = True
             return status
     return status            
+
 async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
