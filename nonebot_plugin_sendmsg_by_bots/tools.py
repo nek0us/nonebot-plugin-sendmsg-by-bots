@@ -218,6 +218,27 @@ async def send_text2md(text: str,bot_id: Optional[str] = None):
                "content": '{"content":"' + repr(text)[1:-1].replace('\"','\\"').replace("\'","\\'") + '"}'
              }
            }
+    
+    md_node = MessageSegment.node_custom(user_id=10000,nickname=" ",content=[md_text])
+    bot = current_bot.get()
+    res_id = await bot.call_api("send_forward_msg", messages=[md_node])
+    node = {
+                "type": "node",
+                "data": {
+                    "name": "123",
+                    "uin":"10000",
+                    "content":MessageSegment.forward(res_id)
+                }
+            }
+    
+    res_id2 = await bot.call_api("send_forward_msg", messages=[node])
+    lmsg = {
+            "type": "longmsg",
+            "data": {
+                "id": res_id2
+            }
+        }
+    
     # md_node = MessageSegment.node_custom(user_id=10000,nickname="测试",content=[md_text])
     # md = MessageSegment.node_custom_lgr(md_node)
     # bot = current_bot.get()
@@ -230,8 +251,8 @@ async def send_text2md(text: str,bot_id: Optional[str] = None):
     #     }
     event = current_event.get()
     if isinstance(event,GroupMessageEvent):
-        await send_group_msg_by_bots_once(group_id=event.group_id,msg=[md_text],self_id=bot_id)
-        # await bot.call_api("send_group_msg",group_id=event.group_id,message=[lmsg])
+        # await send_group_msg_by_bots_once(group_id=event.group_id,msg=MessageSegment.forward(res_id2),self_id=bot_id)
+        await bot.call_api("send_group_msg",group_id=event.group_id,message=[lmsg])
     else:
-        await send_private_msg_by_bots_once(user_id=event.user_id,msg=[md_text],self_id=bot_id)
-        # await bot.call_api("send_private_msg",user_id=event.user_id,message=[lmsg])
+        # await send_private_msg_by_bots_once(user_id=event.user_id,msg=MessageSegment.forward(res_id2),self_id=bot_id)
+        await bot.call_api("send_private_msg",user_id=event.user_id,message=[lmsg])
