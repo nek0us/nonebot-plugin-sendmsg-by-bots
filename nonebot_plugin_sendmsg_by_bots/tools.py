@@ -5,11 +5,15 @@ from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot.exception import FinishedException,ActionFailed
 from nonebot.matcher import current_bot,current_event
-from nonebot import logger
+from nonebot import logger,require
 from typing import Union,Optional
+from more_itertools import chunked
+require("nonebot_plugin_htmlrender")
+from nonebot_plugin_htmlrender import text_to_pic,md_to_pic
 
 class MessageSegment(MessageSegment):
     """重构消息段，使其支持拉格兰"""
+
     @classmethod
     def node_custom_lgr(
         cls, node: Union[list[MessageSegment],Message,MessageSegment]
@@ -22,23 +26,38 @@ class MessageSegment(MessageSegment):
             return Message(cls(
                 "node", {"uin": str(node.data["user_id"]), "name": node.data["nickname"], "content": node.data["content"]}
             ))
+        
+async def send_forward_msg_chunk(bot: Bot,id: int,msg: list,msg_type: str = "group"):
+    try:
+        if len(msg) > 200:
+            chunks = list(chunked(msg,200))
+            for list_value in chunks: 
+                if msg_type == "group":
+                    await bot.send_group_forward_msg(group_id=int(id), messages=list_value)
+                else:
+                    await bot.send_private_forward_msg(user_id=int(id), messages=list_value)
+        else:
+            if msg_type == "group":
+                await bot.send_group_forward_msg(group_id=int(id), messages=msg)
+            else:
+                await bot.send_private_forward_msg(user_id=int(id), messages=msg)
+    except Exception as e:
+        raise e
 
 async def send_forward_msg(bot: Bot,id: int,msg: list,msg_type: str = "group"):
     try:
-        if msg_type == "group":
-            await bot.send_group_forward_msg(group_id=int(id), messages=msg)
-        else:
-            await bot.send_private_forward_msg(user_id=int(id), messages=msg)
+        await send_forward_msg_chunk(bot, id, msg, msg_type)
     except FinishedException:
         pass
     except ActionFailed as e:
         # 拉格兰兼容
         if e.info["status"] == "failed" and e.info["retcode"] == 200 and e.info["data"] == None: # type: ignore
             msg = MessageSegment.node_custom_lgr(msg)
-            if msg_type == "group":
-                await bot.send_group_forward_msg(group_id=int(id), messages=msg)
-            else:
-                await bot.send_private_forward_msg(user_id=int(id), messages=msg)
+            await send_forward_msg_chunk(bot, id, msg, msg_type)
+        else:
+            pic_list = [await md_to_pic(text.data['content'][0].data['text']) for text in msg]
+            md_msg_list = [MessageSegment.node_custom(user_id=int(bot.self_id),nickname=str(index + 1),content=Message(MessageSegment.image(x))) for index,x in enumerate(pic_list)]
+            await send_forward_msg_chunk(bot, id, md_msg_list, msg_type)
     except Exception as e:
         logger.warning(f"发送合并消息失败：{e}")
 
@@ -219,23 +238,33 @@ async def send_text2md(text: str,bot_id: Optional[str] = None):
              }
            }
     
-    md_node = MessageSegment.node_custom(user_id=10000,nickname=" ",content=[md_text])
+    md_node = MessageSegment.node_custom(user_id=int(bot_id),nickname="咩",content=[md_text])
     bot = current_bot.get()
     res_id = await bot.call_api("send_forward_msg", messages=[md_node])
     node = {
                 "type": "node",
                 "data": {
-                    "name": "123",
-                    "uin":"10000",
+                    "name": "咩",
+                    "uin":str(bot_id),
                     "content":MessageSegment.forward(res_id)
                 }
             }
     
     res_id2 = await bot.call_api("send_forward_msg", messages=[node])
+    node2 = {
+                "type": "node",
+                "data": {
+                    "name": "咩",
+                    "uin":str(bot_id),
+                    "content":MessageSegment.forward(res_id2)
+                }
+            }
+    
+    res_id3 = await bot.call_api("send_forward_msg", messages=[node2])
     lmsg = {
             "type": "longmsg",
             "data": {
-                "id": res_id2
+                "id": res_id3
             }
         }
     

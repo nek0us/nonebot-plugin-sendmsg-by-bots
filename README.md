@@ -70,6 +70,7 @@ await tools.send_text2md(text: str):
 # msg : 消息
 
 # 发送成功会返回True，否则会返回False
+# 发送合并消息，超过200条会自动转多条发送
 
 # 从所有bot的群列表检索群信息
 # 未检索到会返回 {"group_name":"未获取到群名","group_id":group_id}
