@@ -5,11 +5,12 @@ from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11 import ActionFailed
 from nonebot.exception import FinishedException,ActionFailed
 from nonebot.matcher import current_bot,current_event
-from nonebot import logger,require
+from nonebot import logger,require,get_bots
 from typing import Union,Optional
 from more_itertools import chunked
 require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import text_to_pic,md_to_pic
+import inspect
 
 class MessageSegment(MessageSegment):
     """重构消息段，使其支持拉格兰"""
@@ -61,10 +62,22 @@ async def send_forward_msg(bot: Bot,id: int,msg: list,msg_type: str = "group"):
     except Exception as e:
         logger.warning(f"发送合并消息失败：{e}")
 
+def log():
+    
+    try:
+        caller_name = inspect.stack()[1].function
+        caller_name_origin = inspect.stack()[2].function
+        logger.debug(f"""bot列表调用链: {caller_name} {caller_name_origin} 获取适配器
+从适配器获取 {nonebot.get_adapter(Adapter)} {nonebot.get_adapter(Adapter).bots}
+从驱动器获取 {nonebot.get_bots()}""")
+    except Exception as e:
+        logger.warning(f"获取适配器出错 {e}")
 
 async def get_all_group_info(group_id:int):
     '''从所有bot账号中检索群信息 return {"group_name":"未获取到群名","group_id":group_id}'''
-    bots = nonebot.get_adapter(Adapter).bots
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
+    log()
     for bot in bots:
         try:
             group_info = await bots[bot].get_group_info(group_id=group_id)
@@ -92,7 +105,9 @@ async def send_group_forward_msg_by_bots(group_id:int,node_msg:list) -> bool:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的node列表\n
     不在bot群列表的群不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
@@ -104,7 +119,9 @@ async def send_private_forward_msg_by_bots(user_id:int,node_msg:list) -> bool:
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的node列表\n
     不在bot好友列表的qq不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     for bot in bots:
         if await is_in_friend(bots[bot],int(user_id)):
@@ -116,7 +133,9 @@ async def send_group_forward_msg_by_bots_once(group_id:int,node_msg:list,bot_id:
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的node列表\n
     不在bot群列表的群不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     
     if bot_id:
@@ -138,7 +157,9 @@ async def send_private_forward_msg_by_bots_once(user_id:int,node_msg:list,bot_id
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的node列表\n
     不在bot好友列表的qq不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     
     if bot_id:
@@ -160,7 +181,9 @@ async def send_group_msg_by_bots(group_id:int,msg:Message|MessageSegment|str) ->
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
     不在bot群列表的群不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
@@ -172,7 +195,9 @@ async def send_group_msg_by_bots_once(group_id:int,msg:Message|MessageSegment|st
     '''group_id：尝试发送到的群号\n
     msg：尝试发送的消息\n
     不在bot群列表的群不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     if self_id:
         try:
@@ -191,7 +216,9 @@ async def send_private_msg_by_bots(user_id:int,msg:Message|MessageSegment|str) -
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的消息\n
     不在bot好友列表的qq不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     for bot in bots:
         if await is_in_friend(bots[bot],int(user_id)):
@@ -203,7 +230,9 @@ async def send_private_msg_by_bots_once(user_id:int,msg:Message|MessageSegment|s
     '''user_id：尝试发送到的好友qq号\n
     msg：尝试发送的消息\n
     不在bot好友列表的qq不会尝试发送'''
-    bots = nonebot.get_adapter(Adapter).bots
+    log()
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
     status = False
     if self_id:
         try:
@@ -221,7 +250,9 @@ async def send_private_msg_by_bots_once(user_id:int,msg:Message|MessageSegment|s
         
 async def get_group_member_list(group_id: int) -> list:
     '''根据群号检索群成员列表'''
-    bots = nonebot.get_adapter(Adapter).bots
+    # bots = nonebot.get_adapter(Adapter).bots
+    bots = get_bots()
+    log()
     group_member = []
     for bot in bots:
         if await is_in_group(bots[bot],int(group_id)):
@@ -279,9 +310,16 @@ async def send_text2md(text: str,bot_id: Optional[str] = None):
     #         }
     #     }
     event = current_event.get()
-    if isinstance(event,GroupMessageEvent):
-        # await send_group_msg_by_bots_once(group_id=event.group_id,msg=MessageSegment.forward(res_id2),self_id=bot_id)
-        await bot.call_api("send_group_msg",group_id=event.group_id,message=[lmsg])
-    else:
-        # await send_private_msg_by_bots_once(user_id=event.user_id,msg=MessageSegment.forward(res_id2),self_id=bot_id)
-        await bot.call_api("send_private_msg",user_id=event.user_id,message=[lmsg])
+    bots = get_bots()
+    log()
+    for botid in bots:
+        if isinstance(event,GroupMessageEvent):
+            if await is_in_group(bots[botid],int(event.group_id)):
+            # await send_group_msg_by_bots_once(group_id=event.group_id,msg=MessageSegment.forward(res_id2),self_id=bot_id)
+                await bots[botid].call_api("send_group_msg",group_id=event.group_id,message=[lmsg])
+                return
+        else:
+            if await is_in_friend(bots[botid],int(event.user_id)):
+            # await send_private_msg_by_bots_once(user_id=event.user_id,msg=MessageSegment.forward(res_id2),self_id=bot_id)
+                await bots[botid].call_api("send_private_msg",user_id=event.user_id,message=[lmsg])
+                return
